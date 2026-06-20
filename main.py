@@ -11,9 +11,15 @@ def compra():
     dados = request.get_json()
     nome = dados.get('nome', 'cliente')
     email = dados.get('email')
-    
+
+    if not email:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "email é obrigatório"
+        }), 400
+
     print(f"[SIMULAÇÃO] Enviando e-mail para {email}")
-    
+
     return jsonify({
         "status": "ok",
         "mensagem": f"Olá {nome}, confirmação enviada para {email}"
