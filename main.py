@@ -50,23 +50,18 @@ def compra():
         return jsonify({"status":"erro","mensagem":"email obrigatório"}),400
     
     try:
-        # 1. envia email
         r = resend.Emails.send({
             "from": "onboarding@resend.dev",
             "to": email,
             "subject": f"Confirmação - {nome}",
             "html": f"<h1>Olá {nome}!</h1><p>Sua compra foi confirmada.</p>"
         })
-        resend_id = r.get('id')
-
-        # 2. salva no banco
         conn = sqlite3.connect('compras.db')
         conn.execute("INSERT INTO compras (nome,email,data,resend_id) VALUES (?,?,?,?)",
-                     (nome, email, datetime.now().isoformat(), resend_id))
+                     (nome, email, datetime.now().isoformat(), r.get('id')))
         conn.commit()
         conn.close()
-
-        return jsonify({"status":"ok","mensagem":f"Email enviado e venda salva para {email}"})
+        return jsonify({"status":"ok","mensagem":f"Email enviado e venda salva"})
     except Exception as e:
         return jsonify({"status":"erro","detalhe":str(e)}),500
 
@@ -75,12 +70,10 @@ def admin():
     conn = sqlite3.connect('compras.db')
     rows = conn.execute("SELECT id, nome, email, data FROM compras ORDER BY id DESC").fetchall()
     conn.close()
-    
-    html = "<h2>Histórico de Vendas</h2><table border=1 cellpadding=5><tr><th>ID</th><th>Nome</th><th>Email</th><th>Data</th></tr>"
-    for id_, nome, email, data in rows:
-        html += f"<tr><td>{id_}</td><td>{nome}</td><td>{email}</td><td>{data[:19]}</td></tr>"
-    html += "</table>"
-    return html
+    html = "<h2>Histórico</h2><table border=1 cellpadding=5><tr><th>ID</th><th>Nome</th><th>Email</th><th>Data</th></tr>"
+    for i,n,e,d in rows:
+        html += f"<tr><td>{i}</td><td>{n}</td><td>{e}</td><td>{d[:19]}</td></tr>"
+    return html + "</table>"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
